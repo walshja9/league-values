@@ -121,6 +121,27 @@ class PointRule:
 
 
 @dataclass(frozen=True)
+class RosterSettings:
+    teams: int = 12
+    roster_size: int = 23
+    positions: Mapping[str, int] = field(default_factory=dict)
+    bench: int = 5
+
+    @property
+    def total_starters(self) -> int:
+        return sum(self.positions.values())
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any]) -> "RosterSettings":
+        return cls(
+            teams=int(data.get("teams", 12)),
+            roster_size=int(data.get("roster_size", 23)),
+            positions={str(k): int(v) for k, v in data.get("positions", {}).items()},
+            bench=int(data.get("bench", 5)),
+        )
+
+
+@dataclass(frozen=True)
 class LeagueConfig:
     name: str
     scoring_mode: ScoringMode
@@ -129,6 +150,7 @@ class LeagueConfig:
     league_baselines: Mapping[str, tuple[float, float]] = field(default_factory=dict)
     """Optional fixed (mean, stddev) per category id. When provided, z-scores use these
     instead of pool-derived statistics, making valuations stable across different input sets."""
+    roster: RosterSettings | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "scoring_mode", _enum_value(ScoringMode, self.scoring_mode))
@@ -152,12 +174,15 @@ class LeagueConfig:
         baselines = {}
         for cat_id, pair in data.get("league_baselines", {}).items():
             baselines[cat_id] = (float(pair[0]), float(pair[1]))
+        roster_data = data.get("roster")
+        roster = RosterSettings.from_dict(roster_data) if roster_data else None
         return cls(
             name=str(data["name"]),
             scoring_mode=data["scoring_mode"],
             categories=tuple(CategorySpec.from_dict(item) for item in data.get("categories", ())),
             point_rules=tuple(PointRule.from_dict(item) for item in data.get("point_rules", ())),
             league_baselines=baselines,
+            roster=roster,
         )
 
 

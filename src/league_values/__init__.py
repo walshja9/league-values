@@ -9,6 +9,7 @@ from .models import (
     PlayerPool,
     PlayerProjection,
     PointRule,
+    RosterSettings,
     ScoringMode,
     ValuationResult,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "PlayerPool",
     "PlayerProjection",
     "PointRule",
+    "RosterSettings",
     "ScoringMode",
     "ValuationEngine",
     "ValuationResult",
