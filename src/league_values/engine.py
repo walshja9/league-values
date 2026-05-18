@@ -15,6 +15,9 @@ from .models import (
 class ValuationEngine:
     """Scores projections using only the league configuration."""
 
+    def __init__(self, post_processors: list | None = None) -> None:
+        self.post_processors = post_processors or []
+
     def value_players(
         self,
         players: Iterable[PlayerProjection | Mapping[str, object]],
@@ -27,8 +30,14 @@ class ValuationEngine:
         ]
 
         if league_config.scoring_mode is ScoringMode.POINTS:
-            return self._value_points(projections, league_config)
-        return self._value_categories(projections, league_config)
+            results = self._value_points(projections, league_config)
+        else:
+            results = self._value_categories(projections, league_config)
+
+        for processor in self.post_processors:
+            results = processor.process(results, league_config)
+
+        return sorted(results, key=lambda result: result.total_value, reverse=True)
 
     def _value_points(
         self,
@@ -55,7 +64,7 @@ class ValuationEngine:
                     points=total,
                 )
             )
-        return sorted(results, key=lambda result: result.total_value, reverse=True)
+        return results
 
     def _value_categories(
         self,
@@ -102,7 +111,7 @@ class ValuationEngine:
             )
             for player in players
         ]
-        return sorted(results, key=lambda result: result.total_value, reverse=True)
+        return results
 
     def _category_impact(
         self,

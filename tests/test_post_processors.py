@@ -1,0 +1,69 @@
+import unittest
+from dataclasses import replace
+
+from league_values import (
+    CategorySpec,
+    LeagueConfig,
+    PlayerPool,
+    ScoringMode,
+    ValuationEngine,
+    ValuationResult,
+)
+from league_values.post_processors import PostProcessor
+
+
+class DoubleValueProcessor:
+    """Test processor that doubles total_value."""
+    def process(self, results, league):
+        return [replace(r, total_value=r.total_value * 2) for r in results]
+
+
+class AddFiveProcessor:
+    """Test processor that adds 5 to total_value."""
+    def process(self, results, league):
+        return [replace(r, total_value=r.total_value + 5) for r in results]
+
+
+class TestPostProcessorPipeline(unittest.TestCase):
+    def _league(self):
+        return LeagueConfig(
+            name="T",
+            scoring_mode=ScoringMode.CATEGORIES,
+            categories=(
+                CategorySpec(id="HR", label="HR", pool=PlayerPool.HITTER, stat="HR"),
+            ),
+        )
+
+    def _players(self):
+        return [
+            {"id": "a", "name": "A", "pool": "hitter", "stats": {"HR": 40}},
+            {"id": "b", "name": "B", "pool": "hitter", "stats": {"HR": 10}},
+        ]
+
+    def test_engine_without_processors_works(self):
+        engine = ValuationEngine()
+        results = engine.value_players(self._players(), self._league())
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0].name, "A")
+
+    def test_engine_with_one_processor(self):
+        engine = ValuationEngine(post_processors=[DoubleValueProcessor()])
+        results = engine.value_players(self._players(), self._league())
+        self.assertAlmostEqual(results[0].total_value, 2.0, places=3)
+        self.assertAlmostEqual(results[1].total_value, -2.0, places=3)
+
+    def test_processors_compose_in_order(self):
+        # Double first, then add 5: A = 1.0 * 2 + 5 = 7.0
+        engine = ValuationEngine(post_processors=[DoubleValueProcessor(), AddFiveProcessor()])
+        results = engine.value_players(self._players(), self._league())
+        self.assertAlmostEqual(results[0].total_value, 7.0, places=3)
+        self.assertAlmostEqual(results[1].total_value, 3.0, places=3)
+
+    def test_processors_re_sort_results(self):
+        class FlipProcessor:
+            def process(self, results, league):
+                return [replace(r, total_value=-r.total_value) for r in results]
+
+        engine = ValuationEngine(post_processors=[FlipProcessor()])
+        results = engine.value_players(self._players(), self._league())
+        self.assertEqual(results[0].name, "B")
