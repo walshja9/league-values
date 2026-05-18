@@ -31,6 +31,8 @@ class ValuationEngine:
 
         if league_config.scoring_mode is ScoringMode.POINTS:
             results = self._value_points(projections, league_config)
+        elif league_config.scoring_mode is ScoringMode.ROTO:
+            results = self._value_roto(projections, league_config)
         else:
             results = self._value_categories(projections, league_config)
 
@@ -108,6 +110,53 @@ class ValuationEngine:
                 raw_values=raw_values[player.id],
                 z_scores=z_scores[player.id],
                 category_values=category_values[player.id],
+            )
+            for player in players
+        ]
+        return results
+
+    def _value_roto(
+        self,
+        players: list[PlayerProjection],
+        league: LeagueConfig,
+    ) -> list[ValuationResult]:
+        raw_values: dict[str, dict[str, float | None]] = {p.id: {} for p in players}
+        sgp_values: dict[str, dict[str, float]] = {p.id: {} for p in players}
+
+        for category in league.categories:
+            eligible = [p for p in players if category.applies_to(p.pool)]
+            impacts = {
+                p.id: self._category_impact(p, category, eligible)
+                for p in eligible
+            }
+
+            sorted_impacts = sorted(impacts.values(), reverse=True)
+            if len(sorted_impacts) >= 2:
+                gaps = [sorted_impacts[i] - sorted_impacts[i + 1] for i in range(len(sorted_impacts) - 1)]
+                sgp_denom = sum(gaps) / len(gaps) if gaps else 1.0
+                if sgp_denom == 0:
+                    sgp_denom = 1.0
+            else:
+                sgp_denom = None  # single-player pool: no standings gain possible
+
+            for player in players:
+                raw_values[player.id][category.id] = (
+                    self._raw_category_value(player, category)
+                    if category.applies_to(player.pool)
+                    else None
+                )
+                if not category.applies_to(player.pool) or sgp_denom is None:
+                    sgp_values[player.id][category.id] = 0.0
+                else:
+                    sgp_values[player.id][category.id] = impacts[player.id] * category.weight / sgp_denom
+
+        results = [
+            ValuationResult(
+                player=player,
+                total_value=sum(sgp_values[player.id].values()),
+                raw_values=raw_values[player.id],
+                z_scores={},
+                category_values=sgp_values[player.id],
             )
             for player in players
         ]

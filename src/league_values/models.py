@@ -8,6 +8,7 @@ from typing import Any, Mapping
 class ScoringMode(str, Enum):
     CATEGORIES = "categories"
     POINTS = "points"
+    ROTO = "roto"
 
 
 class PlayerPool(str, Enum):
@@ -164,7 +165,7 @@ class LeagueConfig:
             "point_rules",
             tuple(r if isinstance(r, PointRule) else PointRule.from_dict(r) for r in self.point_rules),
         )
-        if self.scoring_mode is ScoringMode.CATEGORIES and not self.categories:
+        if self.scoring_mode in (ScoringMode.CATEGORIES, ScoringMode.ROTO) and not self.categories:
             raise ValueError("Category leagues need at least one category.")
         if self.scoring_mode is ScoringMode.POINTS and not self.point_rules:
             raise ValueError("Points leagues need at least one point rule.")
