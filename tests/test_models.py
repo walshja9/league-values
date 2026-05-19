@@ -2,7 +2,7 @@
 
 import unittest
 
-from league_values.models import RosterSettings, LeagueConfig
+from league_values.models import RosterSettings, LeagueConfig, CategorySpec, PlayerPool, Direction
 
 
 class TestRosterSettings(unittest.TestCase):
@@ -65,6 +65,30 @@ class TestLeagueConfigRoster(unittest.TestCase):
         self.assertEqual(cfg.roster.roster_size, 20)
         self.assertEqual(cfg.roster.bench, 3)
         self.assertEqual(cfg.roster.total_starters, 5)
+
+
+class TestPlayerPoolRP(unittest.TestCase):
+    def test_starter_and_reliever_exist(self):
+        self.assertEqual(PlayerPool.STARTER.value, "starter")
+        self.assertEqual(PlayerPool.RELIEVER.value, "reliever")
+
+    def test_pitcher_category_applies_to_starter(self):
+        cat = CategorySpec(id="K", label="K", pool=PlayerPool.PITCHER, stat="K")
+        self.assertTrue(cat.applies_to(PlayerPool.STARTER))
+        self.assertTrue(cat.applies_to(PlayerPool.RELIEVER))
+        self.assertTrue(cat.applies_to(PlayerPool.PITCHER))
+
+    def test_starter_only_category(self):
+        cat = CategorySpec(id="QS", label="QS", pool=PlayerPool.STARTER, stat="QS")
+        self.assertTrue(cat.applies_to(PlayerPool.STARTER))
+        self.assertFalse(cat.applies_to(PlayerPool.RELIEVER))
+        self.assertFalse(cat.applies_to(PlayerPool.HITTER))
+
+    def test_reliever_only_category(self):
+        cat = CategorySpec(id="SV", label="SV", pool=PlayerPool.RELIEVER, stat="SV")
+        self.assertTrue(cat.applies_to(PlayerPool.RELIEVER))
+        self.assertFalse(cat.applies_to(PlayerPool.STARTER))
+        self.assertFalse(cat.applies_to(PlayerPool.HITTER))
 
 
 if __name__ == "__main__":
