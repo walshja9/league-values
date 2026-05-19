@@ -1,3 +1,4 @@
+data/projections/raw/*.json
 __pycache__/
 *.py[cod]
 .pytest_cache/
