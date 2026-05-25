@@ -114,7 +114,7 @@ def _compute_position_ranks(results: list[ValuationResult]) -> dict[str, str]:
     return position_ranks
 
 
-def _compute_dollar_values(results: list[ValuationResult], num_teams: int = 12, budget: int = 260) -> dict[str, float]:
+def _compute_dollar_values(results: list[ValuationResult], num_teams: int = 12, budget: int = 200) -> dict[str, float]:
     """Convert z-score values to auction dollar values proportionally."""
     positive_results = [r for r in results if r.total_value > 0]
     total_positive = sum(r.total_value for r in positive_results)
