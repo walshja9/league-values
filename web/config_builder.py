@@ -34,8 +34,11 @@ def build_config(
     rules_str: str | None = None,
     pt_params: dict[str, str] | None = None,
     split_rp: bool = False,
+    weights: dict[str, float] | None = None,
 ) -> LeagueConfig:
     """Build a LeagueConfig from URL query parameters."""
+    from dataclasses import replace as dc_replace
+
     scoring_mode = ScoringMode(mode)
 
     if scoring_mode is ScoringMode.POINTS:
@@ -65,12 +68,27 @@ def build_config(
         pitching_categories = get_split_pitching_categories(pcat_ids)
     else:
         pitching_categories = get_categories(pcat_ids)
-    categories = tuple(hitting_categories + pitching_categories)
+    categories = list(hitting_categories + pitching_categories)
+
+    # Apply weights
+    if weights:
+        weighted = []
+        for cat in categories:
+            # For split categories (SP_K, RP_K), check base ID too
+            if cat.id.startswith("SP_") or cat.id.startswith("RP_"):
+                base_id = cat.id[3:]
+                w = weights.get(base_id, 1.0)
+            else:
+                w = weights.get(cat.id, 1.0)
+            if w != 1.0:
+                cat = dc_replace(cat, weight=w)
+            weighted.append(cat)
+        categories = weighted
 
     return LeagueConfig(
         name="Custom",
         scoring_mode=scoring_mode,
-        categories=categories,
+        categories=tuple(categories),
     )
 
 
@@ -83,6 +101,7 @@ def build_url_params(
     search: str = "",
     rules_str: str = "",
     split_rp: bool = False,
+    weights: dict[str, float] | None = None,
 ) -> str:
     """Build URL query string from current state. Returns '' for defaults."""
     params: dict[str, str] = {}
@@ -95,6 +114,7 @@ def build_url_params(
         and not position
         and not search
         and not split_rp
+        and not weights
     )
     if is_default:
         return ""
@@ -119,5 +139,9 @@ def build_url_params(
         params["search"] = search
     if split_rp:
         params["split_rp"] = "on"
+    if weights:
+        for cat_id, w in weights.items():
+            if w != 1.0:
+                params[f"w_{cat_id}"] = str(w)
 
     return urlencode(params) if params else ""

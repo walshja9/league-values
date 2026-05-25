@@ -99,6 +99,21 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
     font-size: 0.85rem;
 }
 .cat-option input[type="checkbox"] { accent-color: #2563eb; }
+.cat-label { flex: 1; }
+.weight-input {
+    width: 50px;
+    padding: 0.15rem 0.3rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-align: center;
+    margin-left: auto;
+    color: #374151;
+}
+.weight-input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
 
 .points-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
 .points-table th, .points-table td { padding: 0.3rem 0.5rem; text-align: left; }
@@ -195,6 +210,21 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
 .col-dollars { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; min-width: 40px; }
 .col-value { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
 .col-cat { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.75rem; }
+
+.tier-break {
+    border-top: 2px solid #2563eb !important;
+}
+.tier-badge {
+    display: inline-block;
+    margin-left: 0.3rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #fff;
+    background: #2563eb;
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    vertical-align: middle;
+}
 
 .pos-rank {
     display: inline-block;

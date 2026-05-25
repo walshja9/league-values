@@ -20,7 +20,12 @@
         <label class="cat-option">
             <input type="checkbox" name="cats" value="{{ cat.id }}"
                    {{ 'checked' if cat.id in cats else '' }}>
-            <span>{{ cat.label }}</span>
+            <span class="cat-label">{{ cat.label }}</span>
+            {% if cat.id in cats %}
+            <input type="number" name="w_{{ cat.id }}" class="weight-input"
+                   value="{{ weights.get(cat.id, 1.0) }}" step="0.25" min="0" max="5"
+                   title="Weight for {{ cat.label }}">
+            {% endif %}
         </label>
         {% endfor %}
     </div>
@@ -30,7 +35,12 @@
         <label class="cat-option">
             <input type="checkbox" name="pcats" value="{{ cat.id }}"
                    {{ 'checked' if cat.id in pcats else '' }}>
-            <span>{{ cat.label }}</span>
+            <span class="cat-label">{{ cat.label }}</span>
+            {% if cat.id in pcats %}
+            <input type="number" name="w_{{ cat.id }}" class="weight-input"
+                   value="{{ weights.get(cat.id, 1.0) }}" step="0.25" min="0" max="5"
+                   title="Weight for {{ cat.label }}">
+            {% endif %}
         </label>
         {% endfor %}
     </div>

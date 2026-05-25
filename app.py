@@ -129,6 +129,37 @@ def _compute_dollar_values(results: list[ValuationResult], num_teams: int = 12, 
     return dollar_values
 
 
+def _compute_tiers(results: list[ValuationResult], num_tiers: int = 8) -> dict[str, int]:
+    """Assign tier numbers (1 = best) based on value gaps between consecutive players.
+
+    Finds the largest gaps in the value sequence and uses them as tier boundaries.
+    Returns player_id -> tier_number mapping.
+    """
+    if len(results) < 2:
+        return {r.player.id: 1 for r in results}
+
+    # Compute gaps between consecutive players
+    gaps = []
+    for i in range(len(results) - 1):
+        gap = results[i].total_value - results[i + 1].total_value
+        gaps.append((gap, i))  # (gap_size, index after which the break occurs)
+
+    # Find the largest gaps to use as tier boundaries
+    sorted_gaps = sorted(gaps, key=lambda x: x[0], reverse=True)
+    # Use top (num_tiers - 1) gaps as boundaries
+    break_indices = sorted([g[1] for g in sorted_gaps[:num_tiers - 1]])
+
+    # Assign tier numbers
+    tiers = {}
+    current_tier = 1
+    for i, r in enumerate(results):
+        tiers[r.player.id] = current_tier
+        if i in break_indices:
+            current_tier += 1
+
+    return tiers
+
+
 def _build_context(args):
     """Parse request args and build template context."""
     mode = args.get("mode", "categories")
@@ -146,11 +177,20 @@ def _build_context(args):
         if key.startswith("pt_"):
             pt_params[key[3:]] = args[key]
 
+    # Collect w_* params for category weights
+    weights: dict[str, float] = {}
+    for key in args:
+        if key.startswith("w_"):
+            try:
+                weights[key[2:]] = float(args[key])
+            except ValueError:
+                pass
+
     # Build config and run engine
     config = build_config(
         mode=mode, cats=cats, pcats=pcats,
         rules_str=rules_str, pt_params=pt_params if pt_params else None,
-        split_rp=split_rp,
+        split_rp=split_rp, weights=weights if weights else None,
     )
     results = engine.value_players(store.get_all(), config)
     results = _merge_two_way_players(results)
@@ -205,9 +245,10 @@ def _build_context(args):
             for cat in active_categories
         ]
 
-    # Position ranks and auction dollar values
+    # Position ranks, auction dollar values, and tier visualization
     position_ranks = _compute_position_ranks(results)
     dollar_values = _compute_dollar_values(results)
+    tiers = _compute_tiers(results)
 
     return {
         "mode": mode,
@@ -219,6 +260,7 @@ def _build_context(args):
         "rules_str": rules_str,
         "pt_params": pt_params,
         "split_rp": split_rp,
+        "weights": weights,
         "results": results,
         "active_categories": active_categories,
         "display_columns": display_columns,
@@ -230,6 +272,7 @@ def _build_context(args):
         "config": config,
         "position_ranks": position_ranks,
         "dollar_values": dollar_values,
+        "tiers": tiers,
     }
 
 
@@ -248,6 +291,7 @@ def rankings():
         mode=ctx["mode"], cats=ctx["cats"], pcats=ctx["pcats"],
         pool=ctx["pool"], position=ctx["position"], search=ctx["search"],
         rules_str=ctx["rules_str"], split_rp=ctx["split_rp"],
+        weights=ctx["weights"] if ctx["weights"] else None,
     )
     push_url = f"/?{url_params}" if url_params else "/"
     response.headers["HX-Replace-Url"] = push_url

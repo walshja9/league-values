@@ -19,8 +19,11 @@
         </tr>
     </thead>
     <tbody>
+        {% set tier_colors = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626', '#6b7280', '#9ca3af'] %}
         {% for result in results %}
-        <tr class="player-row" onclick="toggleDetail('{{ result.player.id }}', this)">
+        {% set tier = tiers.get(result.player.id, 0) %}
+        {% set prev_tier = tiers.get(results[loop.index0 - 1].player.id, 0) if loop.index0 > 0 else tier %}
+        <tr class="player-row {% if tier != prev_tier %}tier-break{% endif %}" onclick="toggleDetail('{{ result.player.id }}', this)">
             <td class="col-rank">{{ loop.index }}</td>
             <td class="col-compare">
                 <span class="compare-cb" onclick="event.stopPropagation(); toggleCompare('{{ result.player.id }}', this)" title="Compare">+</span>
@@ -29,6 +32,9 @@
                 <strong>{{ result.player.name }}</strong>
                 {% set pos_rank = position_ranks.get(result.player.id, '') %}
                 {% if pos_rank %}<span class="pos-rank">{{ pos_rank }}</span>{% endif %}
+                {% if tier != prev_tier or loop.index0 == 0 %}
+                <span class="tier-badge" style="background: {{ tier_colors[(tier - 1) % tier_colors|length] }}">T{{ tier }}</span>
+                {% endif %}
             </td>
             <td class="col-pos">{{ result.player.positions | join(', ') or '&mdash;' }}</td>
             <td class="col-team">{{ result.player.metadata.get('team', '') }}</td>
