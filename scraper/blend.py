@@ -48,6 +48,14 @@ def blend_hitters(steamer: list[dict], zips: list[dict]) -> list[dict]:
     return result
 
 
+def _parse_hitter_positions(p: dict) -> list[str]:
+    """Extract positions from FanGraphs 'minpos' field (e.g. 'SS/OF' → ['SS', 'OF'])."""
+    minpos = p.get("minpos", "")
+    if not minpos:
+        return ["DH"]
+    return [pos.strip() for pos in minpos.split("/") if pos.strip()]
+
+
 def _blend_hitter(s: dict, z: dict, pid: str) -> dict:
     stats = {}
     for stat in HITTER_COUNTING:
@@ -59,9 +67,10 @@ def _blend_hitter(s: dict, z: dict, pid: str) -> dict:
     ab = stats.get("AB", 0)
     if ab > 0:
         stats["AVG"] = stats.get("H", 0) / ab
+    positions = _parse_hitter_positions(s)
     return {
         "id": pid, "name": s.get("PlayerName", ""), "pool": "hitter",
-        "positions": [], "team": s.get("Team", ""),
+        "positions": positions, "team": s.get("Team", ""),
         "stats": {k: round(v, 3) if isinstance(v, float) else v for k, v in stats.items()},
         "metadata": {"fangraphs_id": pid, "mlbam_id": str(s.get("xMLBAMID", "") or s.get("MLBAMID", ""))},
         "sources": ["steamer", "zips"],
@@ -74,9 +83,10 @@ def _single_hitter(p: dict, pid: str, source: str) -> dict:
         stats[stat] = _safe_float(p.get(stat))
     for stat in HITTER_RATE:
         stats[stat] = _safe_float(p.get(stat))
+    positions = _parse_hitter_positions(p)
     return {
         "id": pid, "name": p.get("PlayerName", ""), "pool": "hitter",
-        "positions": [], "team": p.get("Team", ""),
+        "positions": positions, "team": p.get("Team", ""),
         "stats": {k: round(v, 3) if isinstance(v, float) else v for k, v in stats.items()},
         "metadata": {"fangraphs_id": pid, "mlbam_id": str(p.get("xMLBAMID", "") or p.get("MLBAMID", ""))},
         "sources": [source],
