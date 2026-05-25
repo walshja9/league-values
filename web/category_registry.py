@@ -127,6 +127,24 @@ def get_categories(ids: list[str]) -> list[CategorySpec]:
     return [_ALL_CATEGORIES[cat_id] for cat_id in ids if cat_id in _ALL_CATEGORIES]
 
 
+def get_split_pitching_categories(ids: list[str]) -> list[CategorySpec]:
+    """For each pitching category ID, return two versions: one for STARTER, one for RELIEVER."""
+    from dataclasses import replace as dc_replace
+    result = []
+    for cat_id in ids:
+        if cat_id not in _ALL_CATEGORIES:
+            continue
+        cat = _ALL_CATEGORIES[cat_id]
+        if cat.pool != PlayerPool.PITCHER:
+            continue
+        # Create SP version
+        sp_cat = dc_replace(cat, id=f"SP_{cat_id}", label=f"{cat.label} (SP)", pool=PlayerPool.STARTER)
+        # Create RP version
+        rp_cat = dc_replace(cat, id=f"RP_{cat_id}", label=f"{cat.label} (RP)", pool=PlayerPool.RELIEVER)
+        result.extend([sp_cat, rp_cat])
+    return result
+
+
 def get_point_rules(rules_str: str) -> list[PointRule]:
     """Parse 'HR:4,K:1,ER:-2' into PointRule objects."""
     if not rules_str.strip():

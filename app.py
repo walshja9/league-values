@@ -92,6 +92,43 @@ def _merge_two_way_players(results: list[ValuationResult]) -> list[ValuationResu
     return sorted(merged, key=lambda r: r.total_value, reverse=True)
 
 
+def _compute_position_ranks(results: list[ValuationResult]) -> dict[str, str]:
+    """Compute rank within position group for each player. Returns player_id -> 'SP12' etc."""
+    pos_counters: dict[str, int] = {}
+    position_ranks: dict[str, str] = {}
+    for r in results:
+        positions = r.player.positions
+        pool = r.player.pool
+        # Determine position key for ranking
+        if pool == PlayerPool.STARTER or (pool == PlayerPool.PITCHER and "SP" in positions):
+            pos_key = "SP"
+        elif pool == PlayerPool.RELIEVER or "RP" in positions:
+            pos_key = "RP"
+        elif positions:
+            # Use primary position; treat two-way hitter-side as their fielding position
+            pos_key = positions[0]
+        else:
+            pos_key = "DH"
+        pos_counters[pos_key] = pos_counters.get(pos_key, 0) + 1
+        position_ranks[r.player.id] = f"{pos_key}{pos_counters[pos_key]}"
+    return position_ranks
+
+
+def _compute_dollar_values(results: list[ValuationResult], num_teams: int = 12, budget: int = 260) -> dict[str, float]:
+    """Convert z-score values to auction dollar values proportionally."""
+    positive_results = [r for r in results if r.total_value > 0]
+    total_positive = sum(r.total_value for r in positive_results)
+    total_budget = budget * num_teams
+    dollar_values: dict[str, float] = {}
+    if total_positive > 0:
+        for r in results:
+            if r.total_value > 0:
+                dollar_values[r.player.id] = round(r.total_value / total_positive * total_budget, 1)
+            else:
+                dollar_values[r.player.id] = 0.0
+    return dollar_values
+
+
 def _build_context(args):
     """Parse request args and build template context."""
     mode = args.get("mode", "categories")
@@ -101,6 +138,7 @@ def _build_context(args):
     position = args.get("position", "")
     search = args.get("search", "")
     rules_str = args.get("rules", "")
+    split_rp = args.get("split_rp", "") == "on"
 
     # Collect pt_* params for points mode
     pt_params = {}
@@ -112,6 +150,7 @@ def _build_context(args):
     config = build_config(
         mode=mode, cats=cats, pcats=pcats,
         rules_str=rules_str, pt_params=pt_params if pt_params else None,
+        split_rp=split_rp,
     )
     results = engine.value_players(store.get_all(), config)
     results = _merge_two_way_players(results)
@@ -137,6 +176,10 @@ def _build_context(args):
     # Active categories for column headers
     active_categories = list(config.categories) if hasattr(config, "categories") else []
 
+    # Position ranks and auction dollar values
+    position_ranks = _compute_position_ranks(results)
+    dollar_values = _compute_dollar_values(results)
+
     return {
         "mode": mode,
         "cats": cats,
@@ -146,6 +189,7 @@ def _build_context(args):
         "search": search,
         "rules_str": rules_str,
         "pt_params": pt_params,
+        "split_rp": split_rp,
         "results": results,
         "active_categories": active_categories,
         "hitting_categories": HITTING_CATEGORIES,
@@ -154,6 +198,8 @@ def _build_context(args):
         "points_presets": POINTS_PRESETS,
         "player_count": store.player_count,
         "config": config,
+        "position_ranks": position_ranks,
+        "dollar_values": dollar_values,
     }
 
 
@@ -171,7 +217,7 @@ def rankings():
     url_params = build_url_params(
         mode=ctx["mode"], cats=ctx["cats"], pcats=ctx["pcats"],
         pool=ctx["pool"], position=ctx["position"], search=ctx["search"],
-        rules_str=ctx["rules_str"],
+        rules_str=ctx["rules_str"], split_rp=ctx["split_rp"],
     )
     push_url = f"/?{url_params}" if url_params else "/"
     response.headers["HX-Replace-Url"] = push_url

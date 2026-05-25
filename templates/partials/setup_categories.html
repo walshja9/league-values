@@ -5,6 +5,12 @@
         {% if name == '5x5' %}Standard 5x5{% elif name == '6x6' %}6x6 (OBP/QS){% else %}{{ name }}{% endif %}
     </a>
     {% endfor %}
+    <div class="split-toggle">
+        <label class="cat-option">
+            <input type="checkbox" name="split_rp" {{ 'checked' if split_rp else '' }}>
+            <span>Split SP/RP baselines</span>
+        </label>
+    </div>
 </div>
 
 <div class="cat-grid">

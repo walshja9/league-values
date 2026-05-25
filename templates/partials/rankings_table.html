@@ -6,14 +6,15 @@
 <table class="rankings-table">
     <thead>
         <tr>
-            <th class="col-rank">#</th>
+            <th class="col-rank sortable" onclick="sortTable(0)">#</th>
             <th class="col-compare"></th>
-            <th class="col-name">Player</th>
+            <th class="col-name sortable" onclick="sortTable(2)">Player</th>
             <th class="col-pos">Pos</th>
-            <th class="col-team">Team</th>
-            <th class="col-value">Value</th>
+            <th class="col-team sortable" onclick="sortTable(4)">Team</th>
+            <th class="col-dollars sortable" onclick="sortTable(5)">$</th>
+            <th class="col-value sortable" onclick="sortTable(6)">Value</th>
             {% for cat in active_categories %}
-            <th class="col-cat" title="{{ cat.label }}">{{ cat.id }}</th>
+            <th class="col-cat sortable" onclick="sortTable({{ loop.index0 + 7 }})" title="{{ cat.label }}">{{ cat.id }}</th>
             {% endfor %}
         </tr>
     </thead>
@@ -26,9 +27,14 @@
             </td>
             <td class="col-name">
                 <strong>{{ result.player.name }}</strong>
+                {% set pos_rank = position_ranks.get(result.player.id, '') %}
+                {% if pos_rank %}<span class="pos-rank">{{ pos_rank }}</span>{% endif %}
             </td>
             <td class="col-pos">{{ result.player.positions | join(', ') or '&mdash;' }}</td>
             <td class="col-team">{{ result.player.metadata.get('team', '') }}</td>
+            <td class="col-dollars {{ 'val-pos' if dollar_values.get(result.player.id, 0) > 0 else '' }}">
+                {% if dollar_values.get(result.player.id, 0) > 0 %}${{ dollar_values.get(result.player.id, 0) | int }}{% else %}&mdash;{% endif %}
+            </td>
             <td class="col-value {{ 'val-pos' if result.total_value > 0 else '' }}{{ 'val-neg' if result.total_value < 0 else '' }}">
                 {{ "%.2f" | format(result.total_value) }}
             </td>
@@ -40,7 +46,7 @@
             {% endfor %}
         </tr>
         <tr id="detail-{{ result.player.id }}" class="detail-row" style="display:none;">
-            <td colspan="{{ 6 + active_categories | length }}"></td>
+            <td colspan="{{ 7 + active_categories | length }}"></td>
         </tr>
         {% endfor %}
     </tbody>

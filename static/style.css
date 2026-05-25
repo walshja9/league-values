@@ -192,8 +192,34 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
 .col-name { min-width: 150px; }
 .col-pos { color: #6b7280; font-size: 0.75rem; }
 .col-team { color: #6b7280; font-size: 0.75rem; }
+.col-dollars { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; min-width: 40px; }
 .col-value { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
 .col-cat { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.75rem; }
+
+.pos-rank {
+    display: inline-block;
+    margin-left: 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    vertical-align: middle;
+}
+
+.split-toggle {
+    display: flex;
+    align-items: center;
+    margin-left: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid #e5e7eb;
+}
+
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: #2563eb; }
+.sortable[data-sort="asc"]::after { content: " \25B2"; font-size: 0.65rem; }
+.sortable[data-sort="desc"]::after { content: " \25BC"; font-size: 0.65rem; }
 
 .val-pos { color: #16a34a; }
 .val-neg { color: #dc2626; }

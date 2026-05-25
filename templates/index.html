@@ -117,6 +117,40 @@ function closeCompare() {
     document.getElementById('compare-overlay').style.display = 'none';
 }
 
+function sortTable(colIndex) {
+    const table = document.querySelector('.rankings-table');
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr.player-row'));
+
+    const th = table.querySelectorAll('th')[colIndex];
+    const ascending = th.dataset.sort === 'asc';
+
+    // Reset all headers
+    table.querySelectorAll('th').forEach(h => delete h.dataset.sort);
+    th.dataset.sort = ascending ? 'desc' : 'asc';
+
+    rows.sort((a, b) => {
+        const aText = a.children[colIndex]?.textContent.trim().replace('$', '').replace('—', '-999');
+        const bText = b.children[colIndex]?.textContent.trim().replace('$', '').replace('—', '-999');
+        const aNum = parseFloat(aText);
+        const bNum = parseFloat(bText);
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return ascending ? aNum - bNum : bNum - aNum;
+        }
+        return ascending ? aText.localeCompare(bText) : bText.localeCompare(aText);
+    });
+
+    // Re-insert rows, keeping each detail row paired with its player row
+    rows.forEach(row => {
+        const detailRow = row.nextElementSibling;
+        tbody.appendChild(row);
+        if (detailRow && detailRow.classList.contains('detail-row')) {
+            tbody.appendChild(detailRow);
+        }
+    });
+}
+
 function toggleDetail(playerId, row) {
     const detailRow = document.getElementById('detail-' + playerId);
     if (!detailRow) return;
