@@ -19,7 +19,12 @@ a:hover { text-decoration: underline; }
     align-items: baseline;
     gap: 1rem;
 }
-.site-header h1 { font-size: 1.4rem; font-weight: 700; }
+.site-header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
 .site-header h1 a { color: #fff; text-decoration: none; }
 .tagline { font-size: 0.8rem; color: #8888aa; }
 
@@ -164,6 +169,10 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
     gap: 1rem;
     margin-bottom: 1rem;
     flex-wrap: wrap;
+    background: #f9fafb;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
 }
 .pool-toggle {
     display: flex;
@@ -220,7 +229,7 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
     z-index: 1;
 }
 .rankings-table th {
-    padding: 0.5rem 0.4rem;
+    padding: 0.45rem 0.4rem;
     text-align: left;
     font-weight: 600;
     font-size: 0.75rem;
@@ -231,7 +240,7 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
     white-space: nowrap;
 }
 .rankings-table td {
-    padding: 0.4rem;
+    padding: 0.35rem 0.4rem;
     border-bottom: 1px solid #f3f4f6;
     white-space: nowrap;
 }
@@ -251,12 +260,12 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
 .tier-badge {
     display: inline-block;
     margin-left: 0.3rem;
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     font-weight: 700;
     color: #fff;
     background: #2563eb;
     border-radius: 3px;
-    padding: 0.05rem 0.3rem;
+    padding: 0.1rem 0.35rem;
     vertical-align: middle;
 }
 
@@ -290,7 +299,7 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
 .na { color: #d1d5db; }
 
 .player-row { cursor: pointer; transition: background 0.1s; }
-.player-row:hover { background: #f8faff; }
+.player-row:hover { background: #f0f4ff; }
 
 .compare-cb {
     display: inline-flex; align-items: center; justify-content: center;
@@ -360,6 +369,15 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
 
 .no-results { text-align: center; padding: 3rem; color: #6b7280; }
 .error { color: #dc2626; }
+
+.site-footer {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 2rem;
+}
 
 @media (max-width: 640px) {
     main { padding: 0.75rem; }
