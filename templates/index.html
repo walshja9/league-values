@@ -67,6 +67,8 @@
         <input type="text" name="search" id="search-input"
                class="search-input" placeholder="Search players..."
                value="{{ search }}">
+
+        <a id="export-btn" class="export-btn" onclick="exportCsv(event)">Export CSV</a>
     </section>
 </form>
 
@@ -161,6 +163,12 @@ function sortTable(colIndex) {
             tbody.appendChild(detailRow);
         }
     });
+}
+
+function exportCsv(e) {
+    e.preventDefault();
+    const params = new URLSearchParams(new FormData(document.getElementById('league-setup')));
+    window.location.href = '/export?' + params.toString();
 }
 
 function toggleDetail(playerId, row) {

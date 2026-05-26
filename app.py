@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import io
 import sys
 from pathlib import Path
 
@@ -354,6 +356,60 @@ def compare():
         r2=r2,
         active_categories=ctx["active_categories"],
     )
+
+
+@app.route("/export")
+def export_csv():
+    ctx = _build_context(request.args)
+    results = ctx["results"]
+    display_columns = ctx["display_columns"]
+    position_ranks = ctx["position_ranks"]
+    dollar_values = ctx["dollar_values"]
+    tiers = ctx["tiers"]
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header row
+    header = ["Rank", "Player", "Positions", "Team", "Position Rank", "Tier", "Auction $", "Value"]
+    for col in display_columns:
+        header.append(col["label"])
+    writer.writerow(header)
+
+    # Data rows
+    pitcher_pos = {"SP", "RP", "P"}
+    for i, result in enumerate(results, 1):
+        # For hitter-pool results, strip pitcher positions from display
+        if result.player.pool == PlayerPool.HITTER:
+            display_positions = [p for p in result.player.positions if p not in pitcher_pos]
+        else:
+            display_positions = list(result.player.positions)
+        row = [
+            i,
+            result.player.name,
+            ", ".join(display_positions) or "DH",
+            result.player.metadata.get("team", ""),
+            position_ranks.get(result.player.id, ""),
+            tiers.get(result.player.id, ""),
+            dollar_values.get(result.player.id, 0),
+            round(result.total_value, 2),
+        ]
+        for col in display_columns:
+            if col.get("split"):
+                sp_raw = result.raw_values.get(col["sp_id"])
+                rp_raw = result.raw_values.get(col["rp_id"])
+                val = result.category_values.get(col["sp_id"], 0) + result.category_values.get(col["rp_id"], 0)
+                row.append(round(val, 1) if sp_raw is not None or rp_raw is not None else "")
+            else:
+                raw = result.raw_values.get(col["id"])
+                val = result.category_values.get(col["id"], 0)
+                row.append(round(val, 1) if raw is not None else "")
+        writer.writerow(row)
+
+    response = make_response(output.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = "attachment; filename=valucast-rankings.csv"
+    return response
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+import csv
+import io
 import sys
 import unittest
 from pathlib import Path
@@ -165,3 +167,44 @@ class TestUrlSharing(unittest.TestCase):
         response = self.client.get("/rankings?mode=roto&cats=R,HR,SB&pcats=K,ERA")
         url = response.headers.get("HX-Replace-Url", "")
         self.assertIn("mode=roto", url)
+
+
+class TestExportRoute(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+        app.config["TESTING"] = True
+
+    def test_export_returns_csv(self):
+        response = self.client.get("/export?mode=categories&cats=R,HR&pcats=K,ERA")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response.content_type)
+
+    def test_export_has_attachment_header(self):
+        response = self.client.get("/export?mode=categories&cats=R,HR&pcats=K,ERA")
+        self.assertIn("attachment", response.headers.get("Content-Disposition", ""))
+        self.assertIn("valucast-rankings.csv", response.headers.get("Content-Disposition", ""))
+
+    def test_export_has_header_row(self):
+        response = self.client.get("/export?mode=categories&cats=R,HR&pcats=K,ERA")
+        text = response.data.decode("utf-8")
+        reader = csv.reader(io.StringIO(text))
+        header = next(reader)
+        self.assertIn("Rank", header)
+        self.assertIn("Player", header)
+        self.assertIn("Value", header)
+
+    def test_export_has_data_rows(self):
+        response = self.client.get("/export?mode=categories&cats=R,HR&pcats=K,ERA")
+        text = response.data.decode("utf-8")
+        reader = csv.reader(io.StringIO(text))
+        rows = list(reader)
+        self.assertGreater(len(rows), 1)
+
+    def test_export_respects_pool_filter(self):
+        response = self.client.get("/export?pool=hitter&cats=R,HR&pcats=K,ERA")
+        text = response.data.decode("utf-8")
+        reader = csv.reader(io.StringIO(text))
+        header = next(reader)
+        pos_col = header.index("Positions")
+        for row in reader:
+            self.assertNotIn("SP", row[pos_col].split(", "))

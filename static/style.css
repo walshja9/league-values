@@ -406,3 +406,22 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
     .detail-body { grid-template-columns: 1fr; }
     .compare-modal { width: 95%; padding: 1rem; }
 }
+
+.export-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.15s;
+    margin-left: auto;
+    text-decoration: none;
+}
+.export-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    text-decoration: none;
+}
