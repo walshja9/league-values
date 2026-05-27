@@ -1,4 +1,4 @@
-"""Fetch Steamer and ZiPS projections from the FanGraphs API."""
+"""Fetch Steamer Rest-of-Season projections from the FanGraphs API."""
 from __future__ import annotations
 
 import json
@@ -19,10 +19,8 @@ def fetch_projections(system: str, stats: str) -> list[dict]:
 
 def fetch_all(delay: float = 1.0) -> dict[str, list[dict]]:
     sets = [
-        ("steamer_hitters", "steamer", "bat"),
-        ("steamer_pitchers", "steamer", "pit"),
-        ("zips_hitters", "zips", "bat"),
-        ("zips_pitchers", "zips", "pit"),
+        ("steamer_hitters", "steamerr", "bat"),
+        ("steamer_pitchers", "steamerr", "pit"),
     ]
     result = {}
     for i, (key, system, stats) in enumerate(sets):

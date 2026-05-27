@@ -25,18 +25,17 @@ class TestFetchProjections(unittest.TestCase):
     @patch("scraper.fangraphs.urlopen")
     def test_fetch_builds_correct_url(self, mock_urlopen):
         mock_urlopen.return_value = self._mock_response([])
-        fetch_projections("zips", "pit")
+        fetch_projections("steamerr", "pit")
         called_url = mock_urlopen.call_args[0][0].full_url
-        self.assertIn("type=zips", called_url)
+        self.assertIn("type=steamerr", called_url)
         self.assertIn("stats=pit", called_url)
 
     @patch("scraper.fangraphs.urlopen")
-    def test_fetch_all_returns_four_keys(self, mock_urlopen):
+    def test_fetch_all_returns_two_keys(self, mock_urlopen):
         mock_urlopen.return_value = self._mock_response([])
         result = fetch_all(delay=0)
         self.assertEqual(set(result.keys()), {
             "steamer_hitters", "steamer_pitchers",
-            "zips_hitters", "zips_pitchers",
         })
 
     def test_projection_url_format(self):
