@@ -337,6 +337,54 @@ class TestVolumeMultiplier(unittest.TestCase):
         self.assertAlmostEqual(noPA.total_value, expected, places=5)
 
 
+class TestAgeCurvePitcherPool(unittest.TestCase):
+    def test_starter_uses_pitcher_curve(self):
+        """STARTER pool players should use pitcher curve, not hitter curve."""
+        hitter_curve = {25: 1.1, 30: 1.0, 35: 0.8}
+        pitcher_curve = {25: 1.05, 30: 1.0, 35: 0.7}
+        ac = AgeCurve(hitter_curve, pitcher_curve)
+
+        league = LeagueConfig(
+            name="T", scoring_mode=ScoringMode.CATEGORIES,
+            categories=(CategorySpec(id="K", label="K", pool=PlayerPool.PITCHER, stat="K"),),
+        )
+        players = [
+            {"id": "sp1", "name": "Young SP", "pool": "starter",
+             "stats": {"K": 200}, "metadata": {"age": 35}},
+            {"id": "sp2", "name": "Anchor SP", "pool": "starter",
+             "stats": {"K": 100}, "metadata": {"age": 35}},
+        ]
+        results = ValuationEngine().value_players(players, league)
+        raw_sp1 = next(r for r in results if r.name == "Young SP")
+        adjusted = ac.process(results, league)
+        adj_sp1 = next(r for r in adjusted if r.name == "Young SP")
+        # pitcher_curve age=35 → 0.7; hitter_curve age=35 → 0.8; values must differ
+        self.assertAlmostEqual(adj_sp1.total_value, raw_sp1.total_value * 0.7, places=3)
+
+    def test_reliever_uses_pitcher_curve(self):
+        """RELIEVER pool players should use pitcher curve, not hitter curve."""
+        hitter_curve = {25: 1.1, 30: 1.0, 35: 0.8}
+        pitcher_curve = {25: 1.05, 30: 1.0, 35: 0.7}
+        ac = AgeCurve(hitter_curve, pitcher_curve)
+
+        league = LeagueConfig(
+            name="T", scoring_mode=ScoringMode.CATEGORIES,
+            categories=(CategorySpec(id="SV", label="SV", pool=PlayerPool.PITCHER, stat="SV"),),
+        )
+        players = [
+            {"id": "rp1", "name": "Old RP", "pool": "reliever",
+             "stats": {"SV": 30}, "metadata": {"age": 35}},
+            {"id": "rp2", "name": "Anchor RP", "pool": "reliever",
+             "stats": {"SV": 10}, "metadata": {"age": 35}},
+        ]
+        results = ValuationEngine().value_players(players, league)
+        raw_rp1 = next(r for r in results if r.name == "Old RP")
+        adjusted = ac.process(results, league)
+        adj_rp1 = next(r for r in adjusted if r.name == "Old RP")
+        # pitcher_curve age=35 → 0.7; hitter_curve age=35 → 0.8; values must differ
+        self.assertAlmostEqual(adj_rp1.total_value, raw_rp1.total_value * 0.7, places=3)
+
+
 class TestVolumeMultiplierPools(unittest.TestCase):
     """Verify VolumeMultiplier works with STARTER and RELIEVER pool types."""
 

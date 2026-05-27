@@ -131,7 +131,7 @@ class AgeCurve:
                 adjusted.append(r)
                 continue
             age = int(age)
-            curve = self.pitcher_curve if r.player.pool is PlayerPool.PITCHER else self.hitter_curve
+            curve = self.pitcher_curve if r.player.pool in (PlayerPool.PITCHER, PlayerPool.STARTER, PlayerPool.RELIEVER) else self.hitter_curve
             mult = self._interpolate(curve, age)
             adjusted.append(replace(r, total_value=r.total_value * mult))
         return adjusted
