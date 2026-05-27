@@ -60,11 +60,12 @@ These are data views, not product modes. The engine consumes `season_outlook` fo
 
 ### Identity Join
 
-- **Join key:** MLBAM ID
-- MLB Stats API provides `player.id` (MLBAM ID)
-- FanGraphs projections store `mlbam_id` in player metadata (populated by blender)
-- Spike confirmed 100% join coverage: 557/557 hitter actuals matched to FG projections
-- Two-way players (Ohtani): appear as separate hitter and pitcher records in both sources, joined independently before display-level merge
+- **Join key:** Composite `(mlbam_id, pool_family)` where pool_family is `"hitter"` or `"pitcher"`
+- MLB Stats API provides `player.id` (MLBAM ID); pool_family determined by which endpoint returned the record (hitting vs pitching)
+- FanGraphs projections store `mlbam_id` in player metadata; pool_family determined by `pool` field (`"hitter"` vs `"starter"`/`"reliever"`/`"pitcher"`)
+- Spike confirmed 100% join coverage: 557/557 hitter actuals matched to FG hitter projections
+- Pitcher join coverage should be reported separately during implementation
+- **Two-way players (Ohtani):** appear as separate hitter and pitcher records in both sources. Joined independently by `(mlbam_id, pool_family)` — hitter actuals join hitter projection, pitcher actuals join pitcher projection. The resulting season-outlook records preserve the original FanGraphs `id` (used by web routes). Display-level merge happens later in `app.py`'s `_merge_two_way_players()`, unchanged.
 
 ## Season Outlook Calculation
 
@@ -108,7 +109,7 @@ Players with ROS projections but no 2026 actuals (not yet debuted, injured, etc.
 
 ### Players Without ROS Projections
 
-Players with 2026 actuals but no ROS projection (not in Steamer/ZiPS): included in `actuals_ytd` output but excluded from `season_outlook` for now. These are typically September call-ups or replacement-level players without projection coverage.
+Players with 2026 actuals but no ROS projection (call-ups, newly rostered relievers): included in season outlook as `actuals_ytd + zero ROS`. Their counting stats are their actuals to date; rate stats are calculated from actuals alone. These records are marked with `"has_ros": false` in metadata so the web app can optionally flag them as having no projection coverage. This ensures players who have already accumulated real category value are not erased from rankings.
 
 ## Refresh Pipeline
 
@@ -138,28 +139,31 @@ data/
     current.json          # Season outlook (actuals + ROS), consumed by web app
 ```
 
-### Output Metadata
+### Output Format
 
-Every `current.json` (season outlook) includes top-level metadata:
+`data/projections/current.json` remains a **plain JSON array** of player records, exactly as the web app's `ProjectionStore` expects. This preserves backward compatibility — no envelope object, no breaking change to `projection_store.py`.
+
+Dataset metadata is written to a **sidecar file** at `data/projections/metadata.json`:
 
 ```json
 {
   "as_of": "2026-05-25",
   "actuals_source": "mlb_stats_api",
   "ros_source": "fangraphs_steamer_zips",
-  "actuals_players": 557,
+  "actuals_hitters": 557,
+  "actuals_pitchers": 638,
   "ros_players": 9366,
-  "outlook_players": 9366,
-  "players": [...]
+  "outlook_players": 9400,
+  "players_without_ros": 34
 }
 ```
 
-The web app can display the `as_of` date to communicate freshness.
+`web/projection_store.py` is modified to load `metadata.json` if present and expose an `as_of` property. The web app displays this date in the footer. If the sidecar is missing (e.g., legacy data), `as_of` defaults to `None` and the footer shows no date.
 
 ### Error Handling
 
-- If MLB Stats API fetch fails: refresh aborts, retains last valid `data/actuals/current.json`. Log the failure. Do not produce partial season outlook.
-- If QS game log fetch fails for individual pitchers: set that pitcher's QS to `null` (not 0). Log the failure. Continue with other pitchers.
+- If MLB Stats API season stats fetch fails: refresh aborts, retains last valid data files. Log the failure. Do not produce partial season outlook.
+- If any QS game log fetch fails for a starting pitcher: the entire actuals refresh aborts and retains the last complete output. QS must be complete for all starters or not included at all — partial QS data would silently produce incorrect rankings for any league using QS categories.
 - If FanGraphs fetch fails: refresh aborts, retains last valid `data/projections/ros.json`. Log the failure.
 - If both actuals and ROS exist but combine step fails: retain last valid `current.json`. Log the failure.
 - The web app always reads `current.json`. It does not know or care whether it contains outlook or projection-only data.
@@ -169,16 +173,18 @@ The web app can display the `as_of` date to communicate freshness.
 | File | Responsibility |
 |---|---|
 | `scraper/mlb_actuals.py` | Fetch 2026 YTD actuals from MLB Stats API. Normalize to engine schema (field renaming, H→H_ALLOWED, SO→K, QS derivation). Output `data/actuals/current.json`. |
-| `scraper/combine.py` | Join actuals to ROS projections by MLBAM ID. Add counting stats, recalculate rate stats. Output `data/projections/current.json` with metadata. |
+| `scraper/combine.py` | Join actuals to ROS projections by composite key `(mlbam_id, pool_family)`. Add counting stats, recalculate rate stats. Include actuals-only players as `actuals + zero ROS`. Output `data/projections/current.json` (player array) and `data/projections/metadata.json` (sidecar). Report hitter and pitcher join coverage separately. |
 
 ## Modified Files
 
 | File | Change |
 |---|---|
 | `scraper/blend.py` | Add `H_ALLOWED` normalization for pitchers (rename `H` → `H_ALLOWED` in `_finalize_pitcher_stats`) |
-| `scraper/refresh.py` | Update orchestration: fetch actuals, fetch ROS, combine, write output files |
+| `scraper/refresh.py` | Update orchestration: fetch actuals, fetch ROS, combine, write output files and metadata sidecar |
 | `src/league_values/post_processors.py` | Fix `AgeCurve` to check `STARTER`/`RELIEVER` pools, not just `PITCHER` |
-| `app.py` | Fix `_compute_tiers` to enforce minimum tier size of 3 |
+| `app.py` | Fix `_compute_tiers` to enforce minimum tier size invariant (no tier < 3 players) |
+| `web/projection_store.py` | Load `metadata.json` sidecar if present, expose `as_of` property |
+| `templates/base.html` | Display `as_of` date in footer when available |
 
 ## Correctness Bug Fixes
 
@@ -186,7 +192,7 @@ The web app can display the `as_of` date to communicate freshness.
 
 **Bug:** Gap-based tiering can create single-player tiers when one player's value is an outlier (e.g., Skubal alone in Tier 1).
 
-**Fix:** After computing tier boundaries from gaps, merge any tier with fewer than 3 players into its adjacent tier. Merge upward (small tier joins the tier above it) unless it's tier 1, in which case merge downward.
+**Fix:** After computing tier boundaries from gaps, enforce the invariant: **no tier may contain fewer than 3 players** (unless the entire result set has fewer than 3). Merge small tiers into their adjacent tier (downward for tier 1, upward for all others) and repeat until the invariant holds. This handles cascading merges where two neighboring small tiers combine into fewer than 3 players.
 
 ### 2. AgeCurve Pitcher Pool
 
