@@ -140,6 +140,8 @@ Players with ROS projections but no 2026 actuals (not yet debuted, injured, etc.
 
 Players with 2026 actuals but no ROS projection (call-ups, newly rostered relievers): included in season outlook as `actuals_ytd + zero ROS`. Their counting stats are their actuals to date; rate stats are calculated from actuals alone. These records are marked with `"has_ros": false` in metadata. **The web app must display a visible "No ROS projection" indicator** on these players (e.g., a badge or dimmed row) so users understand these are partial-season lines, not projected full-season values. This is required, not optional — without it, a call-up with 30 PA appears comparable to a projected 600 PA full-season line.
 
+**ID contract for actuals-only players:** These players have no FanGraphs ID. To avoid collision with existing FanGraphs IDs (which are bare numeric strings like `"15640"`), actuals-only players use a namespaced ID: `"mlbam_{mlbam_id}_H"` for hitters, `"mlbam_{mlbam_id}_P"` for pitchers. For example, MLBAM ID 123456 as a hitter becomes `"mlbam_123456_H"`. This prevents `ProjectionStore` from interpreting an unrelated player as a two-way duplicate. The `mlbam_id` is also stored in metadata for join consistency.
+
 ## Refresh Pipeline
 
 ### Current Flow
@@ -164,7 +166,7 @@ data/
   actuals/
     current.json          # YTD actuals normalized to engine schema
   projections/
-    ros.json              # Blended Steamer + ZiPS ROS projections
+    ros.json              # Steamer ROS projections (single source; ZiPS ROS unavailable)
     current.json          # Season outlook (actuals + ROS), consumed by web app
 ```
 
@@ -181,9 +183,10 @@ Dataset metadata is written to a **sidecar file** at `data/projections/metadata.
   "ros_source": "fangraphs_steamer_ros",
   "actuals_hitters": 557,
   "actuals_pitchers": 638,
-  "ros_players": 9366,
-  "outlook_players": 9400,
-  "players_without_ros": 34
+  "ros_hitters": 4353,
+  "ros_pitchers": 5538,
+  "outlook_players": 9891,
+  "players_without_ros": 0
 }
 ```
 
@@ -195,7 +198,7 @@ Dataset metadata is written to a **sidecar file** at `data/projections/metadata.
 - If any QS game log fetch fails for a starting pitcher: the entire actuals refresh aborts and retains the last complete output. QS must be complete for all starters or not included at all — partial QS data would silently produce incorrect rankings for any league using QS categories.
 - If FanGraphs fetch fails: refresh aborts, retains last valid `data/projections/ros.json`. Log the failure.
 - If both actuals and ROS exist but combine step fails: retain last valid `current.json`. Log the failure.
-- **Atomic publish:** Refresh writes output to staging files (`current.json.tmp`, `metadata.json.tmp`), then renames both atomically only after the complete refresh succeeds. This prevents a failed write from leaving mismatched files (e.g., stale rankings with a fresh `as_of` date, or fresh rankings with stale metadata).
+- **Atomic publish:** The web app loads data once at startup (not hot-reloaded at runtime), so the publish boundary is the refresh script completing successfully. Refresh writes both `current.json` and `metadata.json` sequentially only after all data is validated in memory. If any write fails, both files are left untouched (write to `.tmp`, then `os.replace` each). Since the app does not reload files independently during a running process, there is no reader-visible window where one file is updated and the other is not. On Render, a deploy/restart loads both files together from the committed state.
 - The web app always reads `current.json`. It does not know or care whether it contains outlook or projection-only data.
 
 ## New Files
