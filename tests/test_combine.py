@@ -127,3 +127,32 @@ class TestCombineOutlook(unittest.TestCase):
         result = combine_outlook([ROS_HITTER], [ACTUAL_HITTER])
         judge = next(p for p in result if p["name"] == "Aaron Judge")
         self.assertEqual(judge["metadata"]["has_ros"], True)
+
+    def test_matched_has_stats_actual(self):
+        result = combine_outlook([ROS_HITTER], [ACTUAL_HITTER])
+        judge = next(p for p in result if p["name"] == "Aaron Judge")
+        stats_actual = judge["metadata"]["stats_actual"]
+        self.assertEqual(stats_actual["PA"], 241)
+        self.assertEqual(stats_actual["HR"], 17)
+
+    def test_matched_has_stats_ros(self):
+        result = combine_outlook([ROS_HITTER], [ACTUAL_HITTER])
+        judge = next(p for p in result if p["name"] == "Aaron Judge")
+        stats_ros = judge["metadata"]["stats_ros"]
+        self.assertEqual(stats_ros["PA"], 450)
+        self.assertEqual(stats_ros["HR"], 28)
+
+    def test_ros_only_has_no_stats_actual(self):
+        ros_only = {**ROS_HITTER, "id": "99999", "name": "ROS Only",
+                    "metadata": {**ROS_HITTER["metadata"], "mlbam_id": "999999"}}
+        result = combine_outlook([ros_only], [])
+        player = next(p for p in result if p["name"] == "ROS Only")
+        self.assertNotIn("stats_actual", player["metadata"])
+
+    def test_actuals_only_has_no_stats_ros(self):
+        actuals_only = {**ACTUAL_HITTER, "id": "mlbam_111111_H", "name": "Call Up",
+                        "metadata": {**ACTUAL_HITTER["metadata"], "mlbam_id": "111111",
+                                     "base_id": "mlbam_111111"}}
+        result = combine_outlook([], [actuals_only])
+        player = next(p for p in result if p["name"] == "Call Up")
+        self.assertNotIn("stats_ros", player["metadata"])

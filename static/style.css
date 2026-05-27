@@ -331,7 +331,7 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
 .detail-meta { font-size: 0.8rem; color: #6b7280; }
 .detail-value { font-size: 0.9rem; font-weight: 700; margin-left: auto; }
 
-.detail-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.detail-body { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
 .detail-section h4 { font-size: 0.75rem; text-transform: uppercase; color: #6b7280; margin-bottom: 0.5rem; }
 .detail-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .detail-table th, .detail-table td { padding: 0.25rem 0.5rem; text-align: right; border-bottom: 1px solid #f0f0f0; }

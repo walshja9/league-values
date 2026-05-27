@@ -46,6 +46,8 @@ def _combine_hitter(ros: dict, actual: dict) -> dict:
     meta = dict(ros.get("metadata", {}))
     meta["base_id"] = f"mlbam_{meta.get('mlbam_id', '')}"
     meta["has_ros"] = True
+    meta["stats_actual"] = actual["stats"]
+    meta["stats_ros"] = ros["stats"]
 
     return {
         "id": ros["id"],
@@ -82,6 +84,8 @@ def _combine_pitcher(ros: dict, actual: dict) -> dict:
     meta = dict(ros.get("metadata", {}))
     meta["base_id"] = f"mlbam_{meta.get('mlbam_id', '')}"
     meta["has_ros"] = True
+    meta["stats_actual"] = actual["stats"]
+    meta["stats_ros"] = ros["stats"]
 
     return {
         "id": ros["id"],
