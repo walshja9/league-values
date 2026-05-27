@@ -281,6 +281,18 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
     vertical-align: middle;
 }
 
+.no-ros-badge {
+    display: inline-block;
+    margin-left: 0.3rem;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #d97706;
+    background: #fef3c7;
+    border-radius: 3px;
+    padding: 0.05rem 0.3rem;
+    vertical-align: middle;
+}
+
 .split-toggle {
     display: flex;
     align-items: center;

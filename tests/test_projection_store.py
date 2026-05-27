@@ -137,3 +137,26 @@ class TestProjectionStore(unittest.TestCase):
         burnes = self.store.get_by_id("3")
         self.assertAlmostEqual(burnes.stats["TB"], 0.0)
         self.assertAlmostEqual(burnes.stats["NSB"], 0.0)
+
+
+class TestProjectionStoreMetadata(unittest.TestCase):
+    def test_as_of_none_when_no_sidecar(self):
+        """as_of should be None when metadata.json doesn't exist."""
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "current.json")
+            with open(path, "w") as f:
+                json.dump(SAMPLE_PLAYERS, f)
+            store = ProjectionStore(path)
+            self.assertIsNone(store.as_of)
+
+    def test_as_of_loaded_from_sidecar(self):
+        """as_of should load from metadata.json when present."""
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "current.json")
+            meta_path = os.path.join(d, "metadata.json")
+            with open(path, "w") as f:
+                json.dump(SAMPLE_PLAYERS, f)
+            with open(meta_path, "w") as f:
+                json.dump({"as_of": "2026-05-25"}, f)
+            store = ProjectionStore(path)
+            self.assertEqual(store.as_of, "2026-05-25")

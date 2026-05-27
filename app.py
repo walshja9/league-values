@@ -314,6 +314,7 @@ def _build_context(args):
         "dollar_values": dollar_values,
         "tiers": tiers,
         "config_summary": _config_summary(mode, cats, pcats, split_rp),
+        "as_of": store.as_of,
     }
 
 

@@ -35,6 +35,9 @@
                 {% if tier != prev_tier or loop.index0 == 0 %}
                 <span class="tier-badge" style="background: {{ tier_colors[(tier - 1) % tier_colors|length] }}">T{{ tier }}</span>
                 {% endif %}
+                {% if result.player.metadata.get('has_ros') == false %}
+                <span class="no-ros-badge">No projection</span>
+                {% endif %}
             </td>
             <td class="col-pos">{{ result.player.positions | join(', ') or '&mdash;' }}</td>
             <td class="col-team">{{ result.player.metadata.get('team', '') }}</td>

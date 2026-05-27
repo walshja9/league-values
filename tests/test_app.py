@@ -210,6 +210,14 @@ class TestExportRoute(unittest.TestCase):
             self.assertNotIn("SP", row[pos_col].split(", "))
 
 
+class TestNoRosBadgeCSS(unittest.TestCase):
+    def test_no_ros_badge_style_exists(self):
+        """Static CSS should define .no-ros-badge styles."""
+        css_path = Path(__file__).parent.parent / "static" / "style.css"
+        content = css_path.read_text(encoding="utf-8")
+        self.assertIn(".no-ros-badge", content)
+
+
 class TestComputeTiers(unittest.TestCase):
     def test_single_player_tier_merges_down(self):
         """If tier 1 has only 1 player, merge it into tier 2."""

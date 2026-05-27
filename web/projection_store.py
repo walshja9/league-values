@@ -12,11 +12,19 @@ class ProjectionStore:
     def __init__(self, path: str | Path) -> None:
         self._players: list[PlayerProjection] = []
         self._by_id: dict[str, PlayerProjection] = {}
+        self._as_of: str | None = None
         self._load(Path(path))
 
     def _load(self, path: Path) -> None:
         with path.open("r", encoding="utf-8") as f:
             raw = json.load(f)
+
+        # Load sidecar metadata if present
+        meta_path = path.parent / "metadata.json"
+        if meta_path.exists():
+            with meta_path.open("r", encoding="utf-8") as mf:
+                meta_data = json.load(mf)
+            self._as_of = meta_data.get("as_of")
 
         seen_ids: set[str] = set()
 
@@ -81,3 +89,7 @@ class ProjectionStore:
     @property
     def player_count(self) -> int:
         return len(self._players)
+
+    @property
+    def as_of(self) -> str | None:
+        return self._as_of
