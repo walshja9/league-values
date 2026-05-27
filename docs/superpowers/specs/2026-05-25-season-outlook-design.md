@@ -142,7 +142,7 @@ Players with 2026 actuals but no ROS projection (call-ups, newly rostered reliev
 
 **ID contract for actuals-only players:** These players have no FanGraphs ID. To avoid collision with existing FanGraphs IDs (which are bare numeric strings like `"15640"`), actuals-only players use a namespaced record ID: `"mlbam_{mlbam_id}_H"` for hitters, `"mlbam_{mlbam_id}_P"` for pitchers. For example, MLBAM ID 123456 as a hitter becomes `"mlbam_123456_H"`. This prevents `ProjectionStore` from interpreting an unrelated player as a two-way duplicate.
 
-To support two-way display merges for actuals-only players, each record also sets `metadata.base_id = "mlbam_{mlbam_id}"`. This is the same key `_merge_two_way_players()` uses to group hitter/pitcher entries — so an actuals-only two-way player with `mlbam_123456_H` and `mlbam_123456_P` will share `base_id = "mlbam_123456"` and merge correctly for display, without colliding with FanGraphs-sourced records.
+**Display merge key:** All season-outlook records with an MLBAM ID set `metadata.base_id = "mlbam_{mlbam_id}"`, regardless of whether they matched ROS projections or not. This provides a universal grouping key for `_merge_two_way_players()` that handles all combinations: both roles matched to ROS, both actuals-only, or one matched and one actuals-only. Each record's routing `id` (FanGraphs ID for matched, `mlbam_{id}_H/P` for actuals-only) remains distinct for `ProjectionStore` indexing.
 
 ## Refresh Pipeline
 
@@ -216,7 +216,7 @@ Dataset metadata is written to a **sidecar file** at `data/projections/metadata.
 |---|---|
 | `scraper/fangraphs.py` | Switch from full-season (`steamer`/`zips`) to ROS (`steamerr`) endpoints. Remove ZiPS until `zipsr` is available. |
 | `scraper/blend.py` | Add `H_ALLOWED` normalization for pitchers (rename `H` → `H_ALLOWED` in `_finalize_pitcher_stats`). Handle single-source (Steamer-only) gracefully. |
-| `scraper/refresh.py` | Update orchestration: fetch actuals, fetch ROS, combine, write output files and metadata sidecar with atomic publish |
+| `scraper/refresh.py` | Update orchestration: fetch actuals, fetch ROS, combine, write output files and metadata sidecar with staged publish |
 | `src/league_values/post_processors.py` | Fix `AgeCurve` to check `STARTER`/`RELIEVER` pools, not just `PITCHER` |
 | `app.py` | Fix `_compute_tiers` to enforce minimum tier size invariant (no tier < 3 players) |
 | `web/projection_store.py` | Load `metadata.json` sidecar if present, expose `as_of` property |
