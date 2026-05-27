@@ -119,9 +119,11 @@ def _detect_pitcher_positions(stats: dict) -> list[str]:
 
 
 def _finalize_pitcher_stats(stats: dict) -> dict:
-    """Rename SO→K and add derived stats."""
+    """Rename SO→K, H→H_ALLOWED and add derived stats."""
     if "SO" in stats:
         stats["K"] = stats.pop("SO")
+    if "H" in stats:
+        stats["H_ALLOWED"] = stats.pop("H")
     stats["SV_HLD"] = _safe_float(stats.get("SV", 0)) + _safe_float(stats.get("HLD", 0))
     bb = _safe_float(stats.get("BB", 0))
     k = _safe_float(stats.get("K", 0))

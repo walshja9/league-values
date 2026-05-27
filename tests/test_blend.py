@@ -102,6 +102,21 @@ class TestBlendPitchers(unittest.TestCase):
         self.assertAlmostEqual(ace["stats"]["K"], 205, places=0)
 
 
+class TestPitcherHAllowed(unittest.TestCase):
+    def test_pitcher_stats_have_h_allowed_not_h(self):
+        """Pitcher stats should rename H to H_ALLOWED for WHIP calculation."""
+        result = blend_pitchers(STEAMER_PITCHERS, ZIPS_PITCHERS)
+        for p in result:
+            self.assertIn("H_ALLOWED", p["stats"], f"{p['name']} missing H_ALLOWED")
+            self.assertNotIn("H", p["stats"], f"{p['name']} still has H (should be H_ALLOWED)")
+
+    def test_h_allowed_value_correct(self):
+        """H_ALLOWED value should match the original H value."""
+        result = blend_pitchers(STEAMER_PITCHERS, ZIPS_PITCHERS)
+        closer = next(p for p in result if p["name"] == "Shutdown Closer")
+        self.assertAlmostEqual(closer["stats"]["H_ALLOWED"], 40, places=0)
+
+
 class TestBlendAll(unittest.TestCase):
     def test_blend_projections_returns_all_players(self):
         raw = {"steamer_hitters": STEAMER_HITTERS, "steamer_pitchers": STEAMER_PITCHERS,
