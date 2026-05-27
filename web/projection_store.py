@@ -50,7 +50,8 @@ class ProjectionStore:
                 pool = entry_copy.get("pool", "")
                 suffix = "_P" if pool in ("starter", "reliever", "pitcher") else "_H"
                 entry_copy["id"] = player_id + suffix
-                meta["base_id"] = player_id
+                if "base_id" not in meta:
+                    meta["base_id"] = player_id
             seen_ids.add(player_id)
 
             player = PlayerProjection.from_dict(entry_copy)
