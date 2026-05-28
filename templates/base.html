@@ -16,7 +16,11 @@
         {% block content %}{% endblock %}
     </main>
     <footer class="site-footer">
+        {% if mode == 'dd_dynasty' or mode == 'prospects' %}
+        <p>Data: Dynasty model + prospect feed · MLB stats from FanGraphs Steamer ROS + MLB Stats API{% if as_of %} · Updated {{ as_of }}{% endif %}</p>
+        {% else %}
         <p>Data: FanGraphs Steamer ROS + MLB Stats API{% if as_of %} · Updated {{ as_of }}{% endif %}</p>
+        {% endif %}
     </footer>
 </body>
 </html>

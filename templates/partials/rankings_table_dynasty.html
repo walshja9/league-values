@@ -1,12 +1,12 @@
 <div class="results-meta">
-    <span>{{ dd_rows | length }} players{% if dd_rows | length == 200 %} (showing top 200){% endif %}</span>
+    <span>{{ dd_rows | length }} {% if mode == 'prospects' %}prospects{% else %}players{% endif %}{% if dd_rows | length == 200 %} (showing top 200){% endif %}</span>
 </div>
 
 {% if dd_rows %}
 <table class="rankings-table">
     <thead>
         <tr>
-            <th class="col-rank sortable" onclick="sortTable(0)">#</th>
+            <th class="col-rank sortable" onclick="sortTable(0)">{% if mode == 'prospects' %}P#{% else %}#{% endif %}</th>
             <th class="col-name sortable" onclick="sortTable(1)">Player</th>
             <th class="col-pos">Pos</th>
             <th class="col-team sortable" onclick="sortTable(3)">Team</th>
@@ -20,10 +20,18 @@
         {% set tier = tiers.get(row.id, 0) %}
         {% set prev_tier = tiers.get(dd_rows[loop.index0 - 1].id, 0) if loop.index0 > 0 else tier %}
         <tr class="player-row {% if tier != prev_tier %}tier-break{% endif %}" onclick="toggleDetail('{{ row.id }}', this)">
-            <td class="col-rank">{{ row.dynasty_rank }}</td>
+            <td class="col-rank">
+                {% if mode == 'prospects' and row.prospect_rank %}
+                    {{ row.prospect_rank }}
+                {% else %}
+                    {{ row.dynasty_rank }}
+                {% endif %}
+            </td>
             <td class="col-name">
                 <strong>{{ row.name }}</strong>
-                {% if row.is_prospect and row.prospect_rank %}
+                {% if mode == 'prospects' %}
+                <span class="pos-rank">#{{ row.dynasty_rank }} overall</span>
+                {% elif row.is_prospect and row.prospect_rank %}
                 <span class="prospect-rank-badge">P#{{ row.prospect_rank }}</span>
                 {% endif %}
                 {% if tier != prev_tier or loop.index0 == 0 %}
@@ -31,7 +39,7 @@
                 {% endif %}
             </td>
             <td class="col-pos">{{ row.positions | join(', ') if row.positions else '—' }}</td>
-            <td class="col-team">{{ row.team }}</td>
+            <td class="col-team">{{ row.team or '—' }}</td>
             <td class="col-age">{{ row.age if row.age is not none else '—' }}</td>
             <td class="col-value val-pos">
                 {{ "%.1f" | format(row.dynasty_value) }}

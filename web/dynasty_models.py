@@ -41,16 +41,33 @@ class DynastyRankingRow:
         return self.player_type == "prospect"
 
     @classmethod
+    def _normalize_positions(cls, positions: list) -> tuple:
+        """Clean up noisy position data from feed."""
+        cleaned = []
+        has_sp = "SP" in positions
+        has_rp = "RP" in positions
+        for pos in positions:
+            if pos == "P" and (has_sp or has_rp):
+                continue  # drop redundant P
+            if pos == "N/A" or pos is None:
+                continue  # drop N/A
+            if pos in ("RF", "LF", "CF") and "OF" in positions:
+                continue  # drop specific OF when generic OF exists
+            if pos not in cleaned:
+                cleaned.append(pos)
+        return tuple(cleaned) if cleaned else ("DH",)
+
+    @classmethod
     def from_feed(cls, record: dict) -> DynastyRankingRow:
         """Create from a DD feed record."""
-        positions = record.get("positions") or []
+        positions = cls._normalize_positions(record.get("positions") or [])
         raw_team = record.get("mlb_team", "")
         team = cls.TEAM_CODE_MAP.get(raw_team, raw_team)
         return cls(
             id=record["id"],
             name=record["name"],
             player_type=record["player_type"],
-            positions=tuple(positions),
+            positions=positions,
             team=team,
             age=record.get("age"),
             dynasty_rank=record["dynasty_rank"],

@@ -73,4 +73,4 @@ class TestDynastyRankingRow(unittest.TestCase):
         row = DynastyRankingRow.from_feed(minimal)
         self.assertIsNone(row.mlbam_id)
         self.assertIsNone(row.age)
-        self.assertEqual(row.positions, ())
+        self.assertEqual(row.positions, ("DH",))
