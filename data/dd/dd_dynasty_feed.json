@@ -6,7 +6,7 @@
   "league_preset": "DD_7x7",
   "scale": "0_150_dynasty_value",
   "value_semantics": "higher_is_better",
-  "player_count": 951,
+  "player_count": 1450,
   "prospect_count": 501,
   "players": [
     {
@@ -10945,22 +10945,6 @@
       "mlb_team": "ATH",
       "age": 23,
       "dynasty_rank": 531,
-      "dynasty_value": 25.7,
-      "status": "mlb",
-      "last_updated": "2026-05-27"
-    },
-    {
-      "id": "dd_mlb_max_muncy",
-      "player_type": "mlb",
-      "name": "Max Muncy",
-      "mlbam_id": null,
-      "positions": [
-        "2B",
-        "3B"
-      ],
-      "mlb_team": "ATH",
-      "age": 23,
-      "dynasty_rank": 532,
       "dynasty_value": 25.7,
       "status": "mlb",
       "last_updated": "2026-05-27"
@@ -23819,21 +23803,6 @@
       "mlb_team": "STL",
       "age": 26,
       "dynasty_rank": 1027,
-      "dynasty_value": 11.5,
-      "status": "mlb",
-      "last_updated": "2026-05-27"
-    },
-    {
-      "id": "dd_mlb_fernando_cruz",
-      "player_type": "mlb",
-      "name": "Fernando Cruz",
-      "mlbam_id": null,
-      "positions": [
-        "RP"
-      ],
-      "mlb_team": "NYY",
-      "age": 36,
-      "dynasty_rank": 1028,
       "dynasty_value": 11.5,
       "status": "mlb",
       "last_updated": "2026-05-27"
