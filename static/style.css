@@ -494,3 +494,39 @@ main { max-width: 1600px; margin: 0 auto; padding: 1rem 1.5rem; }
     font-size: 0.85rem;
     color: #92400e;
 }
+
+/* Risk badges */
+.risk-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    vertical-align: middle;
+}
+.risk-low { background: #059669; }
+.risk-moderate { background: #d97706; }
+.risk-high { background: #ea580c; }
+.risk-extreme { background: #dc2626; }
+
+.col-risk { text-align: center; white-space: nowrap; }
+.col-range { text-align: center; white-space: nowrap; font-size: 0.85rem; color: #6b7280; }
+
+.risk-block {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+.risk-range {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+.risk-drivers {
+    width: 100%;
+    font-size: 0.78rem;
+    color: #9ca3af;
+    margin-top: 0.15rem;
+}

@@ -12,6 +12,8 @@
             <th class="col-team sortable" onclick="sortTable(3)">Team</th>
             <th class="col-age sortable" onclick="sortTable(4)">Age</th>
             <th class="col-value sortable" onclick="sortTable(5)">Dynasty Value</th>
+            <th class="col-risk sortable" onclick="sortTable(6)">Risk</th>
+            <th class="col-range">Range</th>
         </tr>
     </thead>
     <tbody>
@@ -44,9 +46,20 @@
             <td class="col-value val-pos">
                 {{ "%.1f" | format(row.dynasty_value) }}
             </td>
+            {% set risk = risk_assessments.get(row.id) if risk_assessments is defined else None %}
+            <td class="col-risk">
+                {% if risk %}
+                <span class="risk-badge risk-{{ risk.risk_level | lower }}">{{ risk.risk_level }}</span>
+                {% endif %}
+            </td>
+            <td class="col-range">
+                {% if risk %}
+                {{ "%.0f" | format(risk.value_low) }}–{{ "%.0f" | format(risk.value_high) }}
+                {% endif %}
+            </td>
         </tr>
         <tr id="detail-{{ row.id }}" class="detail-row" style="display:none;">
-            <td colspan="6"></td>
+            <td colspan="8"></td>
         </tr>
         {% endfor %}
     </tbody>

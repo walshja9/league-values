@@ -9,6 +9,15 @@
         <span class="detail-value val-pos">
             Dynasty Value: {{ "%.1f" | format(row.dynasty_value) }}
         </span>
+        {% if risk %}
+        <div class="risk-block">
+            <span class="risk-badge risk-{{ risk.risk_level | lower }}">{{ risk.risk_level }}</span>
+            <span class="risk-range">Range: {{ "%.0f" | format(risk.value_low) }}–{{ "%.0f" | format(risk.value_high) }}</span>
+            {% if risk.driver_labels %}
+            <div class="risk-drivers">{{ risk.driver_labels | join(', ') }}</div>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 
     <div class="detail-body">
