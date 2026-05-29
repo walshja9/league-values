@@ -359,6 +359,77 @@ class TestNoRosBadgeCSS(unittest.TestCase):
         self.assertIn(".no-ros-badge", content)
 
 
+class TestRiskIntegration(unittest.TestCase):
+    """Risk model integration with dynasty/prospect routes."""
+    def setUp(self):
+        self.client = app.test_client()
+        app.config["TESTING"] = True
+
+    def test_dynasty_table_shows_risk_column(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/?mode=dd_dynasty")
+        self.assertIn(b"col-risk", response.data)
+        self.assertIn(b"risk-badge", response.data)
+
+    def test_prospects_table_shows_risk_column(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/?mode=prospects")
+        self.assertIn(b"col-risk", response.data)
+        self.assertIn(b"risk-badge", response.data)
+
+    def test_dynasty_player_detail_shows_risk_block(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        rows = dd_store.filter()
+        if not rows:
+            self.skipTest("No dynasty rows")
+        response = self.client.get(f"/player/{rows[0].id}?mode=dd_dynasty")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"risk-block", response.data)
+
+    def test_prospect_player_detail_shows_risk_block(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        rows = dd_store.filter(pool="prospect")
+        if not rows:
+            self.skipTest("No prospect rows")
+        response = self.client.get(f"/player/{rows[0].id}?mode=prospects")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"risk-block", response.data)
+
+    def test_dynasty_export_includes_risk_columns(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/export?mode=dd_dynasty")
+        text = response.data.decode("utf-8")
+        reader = csv.reader(io.StringIO(text))
+        header = next(reader)
+        self.assertIn("Risk Level", header)
+        self.assertIn("Value Low", header)
+        self.assertIn("Value High", header)
+        self.assertIn("Risk Drivers", header)
+
+    def test_prospects_export_includes_risk_columns(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/export?mode=prospects")
+        text = response.data.decode("utf-8")
+        reader = csv.reader(io.StringIO(text))
+        header = next(reader)
+        self.assertIn("Risk Level", header)
+        self.assertIn("Value Low", header)
+        self.assertIn("Value High", header)
+        self.assertIn("Risk Drivers", header)
+
+
 class TestComputeTiers(unittest.TestCase):
     def test_single_player_tier_merges_down(self):
         """If tier 1 has only 1 player, merge it into tier 2."""
