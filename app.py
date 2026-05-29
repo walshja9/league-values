@@ -591,7 +591,7 @@ def compare():
 
     ctx = _build_context(request.args)
     config = ctx["config"]
-    all_results = engine.value_players(store.get_all(), config)
+    all_results = engine.value_players(_valuation_players({p1_id, p2_id}), config)
 
     r1 = next((r for r in all_results if r.player.id == p1_id), None)
     r2 = next((r for r in all_results if r.player.id == p2_id), None)
