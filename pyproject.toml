@@ -1,6 +1,6 @@
 [project]
 name = "league-values"
-version = "0.2.0"
+version = "0.7.0"
 description = "Config-driven fantasy baseball league valuation engine."
 requires-python = ">=3.10"
 dependencies = ["flask>=3.0"]
