@@ -350,7 +350,12 @@ def _build_context(args):
         rules_str=rules_str, pt_params=pt_params if pt_params else None,
         split_rp=split_rp, weights=weights if weights else None,
     )
-    results = engine.value_players(store.get_all(), config)
+    search_keep = (
+        {p.id for p in store.get_all() if search.lower() in p.name.lower()}
+        if search
+        else frozenset()
+    )
+    results = engine.value_players(_valuation_players(search_keep), config)
     results = _merge_two_way_players(results)
 
     # Filter results for display

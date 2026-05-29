@@ -487,3 +487,23 @@ class TestComputeTiers(unittest.TestCase):
 
         tiers = _compute_tiers(players)
         self.assertEqual(len(tiers), 2)
+
+
+class TestPlayingTimeFilter(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+        app.config["TESTING"] = True
+
+    def test_subthreshold_player_absent_by_default(self):
+        # Brady Ebel = 1.0 PA in current.json; must not appear in default rankings
+        response = self.client.get("/")
+        self.assertNotIn(b"Brady Ebel", response.data)
+
+    def test_subthreshold_player_present_when_searched(self):
+        response = self.client.get("/?search=Brady+Ebel")
+        self.assertIn(b"Brady Ebel", response.data)
+
+    def test_qualifying_player_still_shown(self):
+        # Sanity: a real everyday player still appears by default
+        response = self.client.get("/")
+        self.assertIn(b"Ohtani", response.data)
