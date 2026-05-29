@@ -14,6 +14,7 @@ from .models import (
     ValuationResult,
 )
 from .post_processors import AgeCurve, PositionScarcity, PostProcessor, ReplacementLevel, VolumeMultiplier
+from .playing_time import filter_by_playing_time
 
 __all__ = [
     "AgeCurve",
@@ -31,6 +32,7 @@ __all__ = [
     "ValuationEngine",
     "ValuationResult",
     "VolumeMultiplier",
+    "filter_by_playing_time",
     "load_league_config",
     "value_players",
 ]
