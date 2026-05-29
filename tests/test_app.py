@@ -210,33 +210,35 @@ class TestExportRoute(unittest.TestCase):
             self.assertNotIn("SP", row[pos_col].split(", "))
 
 
-class TestDDDynastyMode(unittest.TestCase):
+class TestDynastyMode(unittest.TestCase):
+    """Tests for Dynasty and Prospects modes using the DD feed."""
     def setUp(self):
         self.client = app.test_client()
         app.config["TESTING"] = True
 
-    def test_dd_dynasty_returns_200_if_available(self):
-        from app import dd_store
-        if not dd_store.is_available:
-            self.skipTest("DD feed not available")
+    def test_dynasty_returns_200(self):
         response = self.client.get("/?mode=dd_dynasty")
         self.assertEqual(response.status_code, 200)
 
-    def test_dd_dynasty_contains_dynasty_value_header(self):
+    def test_dynasty_shows_dynasty_value_header(self):
         from app import dd_store
         if not dd_store.is_available:
             self.skipTest("DD feed not available")
         response = self.client.get("/?mode=dd_dynasty")
         self.assertIn(b"Dynasty Value", response.data)
 
-    def test_dd_dynasty_rankings_returns_200(self):
+    def test_dynasty_no_category_columns(self):
         from app import dd_store
         if not dd_store.is_available:
             self.skipTest("DD feed not available")
+        response = self.client.get("/?mode=dd_dynasty")
+        self.assertNotIn(b"col-cat", response.data)
+
+    def test_dynasty_rankings_returns_200(self):
         response = self.client.get("/rankings?mode=dd_dynasty")
         self.assertEqual(response.status_code, 200)
 
-    def test_dd_dynasty_export_csv(self):
+    def test_dynasty_export_csv(self):
         from app import dd_store
         if not dd_store.is_available:
             self.skipTest("DD feed not available")
@@ -245,16 +247,96 @@ class TestDDDynastyMode(unittest.TestCase):
         self.assertIn("text/csv", response.content_type)
         self.assertIn(b"Overall Dynasty Rank", response.data)
 
-    def test_dd_dynasty_fallback_when_unavailable(self):
-        """Direct dd_dynasty URL should work even if feed unavailable — falls back to redraft."""
+    def test_dynasty_ignores_cats_params(self):
+        """Custom category params should be ignored in dynasty mode."""
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        r1 = self.client.get("/?mode=dd_dynasty")
+        r2 = self.client.get("/?mode=dd_dynasty&cats=R,HR&pcats=K")
+        self.assertEqual(r1.status_code, 200)
+        self.assertEqual(r2.status_code, 200)
+
+    def test_dynasty_compare_bar_hidden_by_default(self):
+        """Compare bar element is present in DOM but starts hidden (display:none); JS hides it further in dynasty mode per spec."""
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/?mode=dd_dynasty")
+        self.assertIn(b"compare-bar", response.data)
+        self.assertIn(b'style="display:none;"', response.data)
+
+    def test_dynasty_pool_filter_mlb(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/rankings?mode=dd_dynasty&pool=mlb")
+        self.assertEqual(response.status_code, 200)
+
+    def test_dynasty_pool_filter_prospect(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/rankings?mode=dd_dynasty&pool=prospect")
+        self.assertEqual(response.status_code, 200)
+
+    def test_dynasty_search(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/rankings?mode=dd_dynasty&search=skenes")
+        self.assertEqual(response.status_code, 200)
+
+    def test_prospects_returns_200(self):
+        response = self.client.get("/?mode=prospects")
+        self.assertEqual(response.status_code, 200)
+
+    def test_prospects_shows_prospect_rank_header(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/?mode=prospects")
+        self.assertIn(b"P#", response.data)
+
+    def test_prospects_count_copy(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/?mode=prospects")
+        self.assertIn(b"prospects", response.data)
+
+    def test_prospects_rankings_returns_200(self):
+        response = self.client.get("/rankings?mode=prospects")
+        self.assertEqual(response.status_code, 200)
+
+    def test_prospects_export_csv(self):
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/export?mode=prospects")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("text/csv", response.content_type)
+
+    def test_prospects_compare_bar_hidden_by_default(self):
+        """Compare bar element is present in DOM but starts hidden (display:none)."""
+        from app import dd_store
+        if not dd_store.is_available:
+            self.skipTest("DD feed not available")
+        response = self.client.get("/?mode=prospects")
+        self.assertIn(b"compare-bar", response.data)
+        self.assertIn(b'style="display:none;"', response.data)
+
+    def test_dynasty_fallback_when_unavailable(self):
+        """Direct dynasty URL should work even if feed unavailable — falls back to redraft."""
         response = self.client.get("/?mode=dd_dynasty")
         self.assertEqual(response.status_code, 200)
 
-    def test_redraft_still_works(self):
-        """Redraft modes should be completely unaffected."""
+    def test_redraft_unaffected(self):
+        """Redraft modes should be completely unaffected by dynasty features."""
         response = self.client.get("/?mode=categories")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"rankings-table", response.data)
+        self.assertIn(b"col-cat", response.data)
 
 
 class TestNoRosBadgeCSS(unittest.TestCase):
