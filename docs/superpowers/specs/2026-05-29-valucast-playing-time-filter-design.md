@@ -54,17 +54,36 @@ Rules:
 - **Generic pitcher** (`pool == pitcher`, none in current data): use `rp_ip` (the
   lower bar) to avoid wrongly dropping an ambiguous pitcher
 - Comparison is inclusive (`≥`); missing or zero volume → dropped
-- **`always_keep` bypass (two-way tolerant):** a player is retained regardless of
-  threshold if either of the following holds:
-  - `player.id` ∈ `always_keep`, or
-  - `base(player)` ∈ `{ strip_suffix(k) for k in always_keep }`
+- **`always_keep` bypass (two-way tolerant):** the bypass joins two-way siblings on
+  their shared `base_id`. Two-way players (e.g. Ohtani) appear as two rows in the
+  source data with the **same** display id (`19755`); `ProjectionStore` suffixes the
+  second in memory (`19755_P`) but both rows keep the same source-supplied
+  `base_id` (`mlbam_660271`). `base_id` lives in a different namespace from the
+  display id (it is `mlbam_<n>`, not the FanGraphs id) and is present on ~all
+  players, so it — not the display id — is the reliable join key.
 
-  where `base(player) = player.metadata.get("base_id") or strip_suffix(player.id)`
-  and `strip_suffix` removes a trailing `_P` or `_H` (the suffixes
-  `ProjectionStore` adds when deduplicating two-way players). This guarantees that
-  passing either side of a two-way player (e.g. `19755` or `19755_P`) keeps both
-  the hitter and pitcher entries. `strip_suffix` only strips the exact `_P`/`_H`
-  suffixes; current IDs are numeric so there is no collision risk.
+  Resolve in two passes so passing **any** identifier for a two-way player keeps
+  **both** rows:
+
+  ```python
+  keep_ids = set(always_keep)
+  keep_bases = {strip_suffix(k) for k in keep_ids}  # seed: allows passing a base_id directly
+
+  # pass 1: any explicitly kept id contributes its base to the keep set
+  for p in players:
+      if p.id in keep_ids:
+          keep_bases.add(p.metadata.get("base_id") or strip_suffix(p.id))
+
+  # pass 2: retain if matched by id OR by shared base
+  def base(p):
+      return p.metadata.get("base_id") or strip_suffix(p.id)
+  kept = [p for p in players if meets_threshold(p) or p.id in keep_ids or base(p) in keep_bases]
+  ```
+
+  `strip_suffix` removes a trailing `_P`/`_H` (the only suffixes `ProjectionStore`
+  adds) and is just a fallback for the ~2 players lacking a `base_id`; current IDs
+  are numeric/`mlbam_*` so there is no collision risk. This guarantees that passing
+  `19755`, `19755_P`, **or** `mlbam_660271` retains both Ohtani rows.
 
 The function reads only `PlayerProjection` fields (`pool`, `stats`, `id`,
 `metadata`) — no dependency on the store, so it stays pure and easy to test.
@@ -136,8 +155,11 @@ Unit tests for `filter_by_playing_time`:
 - Generic `pitcher` pool uses the `rp_ip` bar
 - Missing PA/IP entirely → dropped
 - `always_keep` retains a sub-threshold player by exact `id`
-- Two-way preservation: passing the base id keeps both `id` and `id_P`/`id_H`
-  entries; passing a suffixed id keeps the sibling too
+- Two-way preservation (shared `base_id` join): passing the display id (`19755`),
+  the suffixed id (`19755_P`), or the `base_id` (`mlbam_660271`) each keeps **both**
+  the hitter and pitcher rows
+- `strip_suffix` fallback path: a sub-threshold player with no `base_id` is still
+  matched by its (suffix-stripped) id
 
 Integration test (`tests/test_app.py` style):
 
