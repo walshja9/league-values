@@ -616,15 +616,10 @@ class TestIncompleteProfileDriver(unittest.TestCase):
     def setUp(self):
         self.model = RiskModel(current_year=2026)
 
-    def test_fires_when_eta_missing(self):
+    def test_fires_when_single_source(self):
+        # One scouting source = genuinely thin coverage.
         drivers = self.model._dynasty_drivers(
-            _prospect_row(eta=None, level="AA", source_ranks={"pipeline": 50})
-        )
-        self.assertIn("incomplete_profile", [d.id for d in drivers])
-
-    def test_fires_when_level_missing(self):
-        drivers = self.model._dynasty_drivers(
-            _prospect_row(eta=2028, level=None, source_ranks={"pipeline": 50})
+            _prospect_row(eta=2028, level="AA", source_ranks={"pipeline": 50})
         )
         self.assertIn("incomplete_profile", [d.id for d in drivers])
 
@@ -640,13 +635,27 @@ class TestIncompleteProfileDriver(unittest.TestCase):
         )
         self.assertIn("incomplete_profile", [d.id for d in drivers])
 
-    def test_skips_when_complete(self):
+    def test_does_not_fire_on_null_level_when_well_scouted(self):
+        # Regression: a consensus prospect with 3 sources but a null `level`
+        # field must NOT be tagged "incomplete scouting profile". `level` is
+        # chronically null in the feed and is not a scouting signal.
         drivers = self.model._dynasty_drivers(
-            _prospect_row(
-                eta=2028,
-                level="AA",
-                source_ranks={"pipeline": 30, "hkb": 45},
-            )
+            _prospect_row(eta=2026, level=None,
+                          source_ranks={"pipeline": 9, "cfr": 168, "hkb": 3})
+        )
+        self.assertNotIn("incomplete_profile", [d.id for d in drivers])
+
+    def test_does_not_fire_on_null_eta_when_two_sources(self):
+        # A null ETA alone no longer triggers the scouting-completeness flag.
+        drivers = self.model._dynasty_drivers(
+            _prospect_row(eta=None, level=None,
+                          source_ranks={"pipeline": 30, "hkb": 45})
+        )
+        self.assertNotIn("incomplete_profile", [d.id for d in drivers])
+
+    def test_skips_when_two_sources(self):
+        drivers = self.model._dynasty_drivers(
+            _prospect_row(source_ranks={"pipeline": 30, "hkb": 45})
         )
         self.assertNotIn("incomplete_profile", [d.id for d in drivers])
 
@@ -658,7 +667,8 @@ class TestIncompleteProfileDriver(unittest.TestCase):
 
     def test_correct_weights(self):
         d = next(
-            d for d in self.model._dynasty_drivers(_prospect_row(eta=None))
+            d for d in self.model._dynasty_drivers(
+                _prospect_row(source_ranks={"pipeline": 50}))
             if d.id == "incomplete_profile"
         )
         self.assertEqual(d.score_delta, 0.05)

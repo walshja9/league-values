@@ -149,9 +149,16 @@ class RiskModel:
         if age is not None and age >= 36:
             drivers.append(RiskDriver("age_deep_decline", f"Age {age} (deep decline)", 0.06, 5, 0))
 
-        # Incomplete profile (prospects missing key data)
+        # Incomplete profile — thin scouting coverage (fewer than 2 ranking
+        # sources). Keyed on source count, NOT on `level`/`eta`: those fields
+        # are chronically null in the feed, so a well-scouted consensus prospect
+        # (multiple sources) should not be tagged "incomplete" for lacking them.
         if is_prospect:
-            if eta is None or level is None or not source_ranks:
+            n_sources = sum(
+                1 for rank in (source_ranks or {}).values()
+                if isinstance(rank, (int, float))
+            )
+            if n_sources < 2:
                 drivers.append(RiskDriver("incomplete_profile", "Incomplete scouting profile", 0.05, 5, 3))
 
         # Breakout / helium (positive labels only)
